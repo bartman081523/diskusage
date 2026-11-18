@@ -29,6 +29,14 @@ All notable changes to this project are documented here. The format follows
 * **"Internal storage" was labelled "SD card"** in German (and "Storage card" in
   English) although it is the primary volume.
 * Progress dialog layout: the percentage was printed on top of the path.
+* **Back button left the user in a loop**: with predictive back (Android 13+)
+  `KEYCODE_BACK` no longer reached the graph view, so the activity fell back to
+  a plain `finish()` and surfaced the volume chooser again — hardware back and
+  the navigation bar behaved differently. Back is now handled through
+  `OnBackPressedDispatcher`: on a single-volume device it leaves the app (task
+  retained, `alwaysRetainTaskState`), on multi-volume devices it returns to the
+  chooser. Cancelling the scan or the permission dialog now also leaves the app
+  instead of reopening the chooser.
 
 ## [5.0.0] - 2026-11-18
 

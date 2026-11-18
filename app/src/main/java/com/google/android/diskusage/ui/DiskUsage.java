@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
 import androidx.annotation.NonNull;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
@@ -107,6 +108,17 @@ public class DiskUsage extends LoadableActivity {
     binding.toolbar.setVisibility(android.view.View.VISIBLE);
     setSupportActionBar(binding.toolbar);
     menu.onCreate(viewModel);
+
+    // Handle back ourselves: with Android 13+ predictive back the framework no
+    // longer delivers KEYCODE_BACK to the view, so the old handler in
+    // FileSystemState never ran and the app fell back to "finish DiskUsage",
+    // which surfaced the volume chooser again.
+    getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+      @Override
+      public void handleOnBackPressed() {
+        finishOnBack();
+      }
+    });
     Intent i = getIntent();
 
 
@@ -459,7 +471,15 @@ public class DiskUsage extends LoadableActivity {
     result.putExtra(DiskUsage.STATE_KEY, outState);
     result.putExtra(DiskUsage.KEY_KEY, key);
     setResult(0, result);
-    finish();
+
+    if (MountPoint.getMountPoints(this).size() > 1) {
+      // More than one volume: go back to the chooser so the user can switch.
+      finish();
+    } else {
+      // Single volume: back means "leave the app". The task (and with it the
+      // scan result) is kept, so reopening is instant.
+      moveTaskToBack(true);
+    }
   }
 
   public void setSelectedEntity(FileSystemEntry position) {

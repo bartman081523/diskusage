@@ -55,6 +55,10 @@ public class SelectActivity extends AppCompatActivity {
   final Map<String, Bundle> bundles = new TreeMap<>();
   final ArrayList<Runnable> actionList = new ArrayList<>();
   private boolean expandRootMountPoints;
+  /** Guards against re-entering the graph in a loop when the user presses back. */
+  private boolean autoSelected;
+  /** True when the graph returned a state bundle (back on a multi-volume device). */
+  private boolean childReturnedState;
 
   private abstract class AbstractUsageAction implements Runnable {
     public void runAction(String key, Class<?> viewer) {
@@ -163,7 +167,8 @@ public class SelectActivity extends AppCompatActivity {
     // Autoselect: on devices with a single storage volume the extra tap is
     // pointless. The dialog is only skipped on the first visit; after returning
     // from the graph the user explicitly gets the chooser.
-    if (options.size() == 1 && bundles.isEmpty() && !actionList.isEmpty()) {
+    if (options.size() == 1 && bundles.isEmpty() && !autoSelected && !actionList.isEmpty()) {
+      autoSelected = true;
       actionList.get(0).run();
       return;
     }
@@ -196,12 +201,22 @@ public class SelectActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    if (autoSelected && !childReturnedState) {
+      // We entered a child screen and it went away without handing back a
+      // state (scan cancelled, permission dialog dismissed, ...): back means
+      // "leave the app", not "show the volume chooser again".
+      finish();
+      return;
+    }
     makeDialog();
     handler.post(checkForMountsUpdates);
   }
 
   @Override
   protected void onPause() {
+    // Coming back from the graph (or from a permission screen) must not
+    // auto-open it again; show the chooser instead.
+    autoSelected = true;
     dismissDialog();
     handler.removeCallbacks(checkForMountsUpdates);
     super.onPause();
@@ -215,6 +230,7 @@ public class SelectActivity extends AppCompatActivity {
     String key = data.getStringExtra(DiskUsage.KEY_KEY);
     if (key != null && state != null) {
       bundles.put(key, state);
+      childReturnedState = true;
     }
   }
 
