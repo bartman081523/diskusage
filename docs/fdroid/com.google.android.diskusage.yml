@@ -1,0 +1,44 @@
+# Template for https://gitlab.com/fdroid/fdroiddata/-/blob/master/metadata/<appid>.yml
+# Copy to metadata/com.google.android.diskusage.yml in your fdroiddata fork and
+# update CurrentVersion/CurrentVersionCode/Builds for every new release.
+Categories:
+  - System
+License: GPL-2.0-or-later
+AuthorName: Ivan Volosyuk
+WebSite: https://github.com/bartman081523/diskusage
+SourceCode: https://github.com/bartman081523/diskusage
+IssueTracker: https://github.com/bartman081523/diskusage/issues
+Changelog: https://github.com/bartman081523/diskusage/releases
+
+AutoName: DiskUsage
+
+RepoType: git
+Repo: https://github.com/bartman081523/diskusage.git
+
+Builds:
+  - versionName: 5.0.0
+    versionCode: 50000
+    commit: v5.0.0
+    gradle:
+      - yes
+    ndk: r28c
+    # AGP names the APK after the version, so the artifact has to be declared.
+    output: app/build/outputs/apk/release/diskusage-release-5.0.0.apk
+    prebuild:
+      - sed -i '/^org.gradle.jvmargs/d' gradle.properties
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+VercodeOperation:
+  - '10000 * %c1 + 100 * %c2 + %c3'
+CurrentVersion: 5.0.0
+CurrentVersionCode: 50000
+
+MaintainerNotes: |-
+  Version codes are derived from the semantic version:
+  major * 10000 + minor * 100 + patch (5.1.2 -> 50102).
+  The project uses AGP 9 with built-in Kotlin, compileSdk/targetSdk 37 and
+  NDK r28c for the small ndk-build helper (app/src/main/jni). No prebuilt
+  native libraries are shipped. MANAGE_EXTERNAL_STORAGE is required for the
+  app's core purpose (analysing all shared storage); PACKAGE_USAGE_STATS is
+  optional and only improves per-app size details.

@@ -82,11 +82,11 @@ public class RootMountPoint extends MountPoint {
       String line;
       while ((line = reader.readLine()) != null) {
         checksum += line.length();
-        Timber.d("initMountPoints: Line: %s", line);
+        Timber.v("initMountPoints: Line: %s", line);
         String[] parts = line.split(" +");
         if (parts.length < 3) continue;
         String mountPoint = parts[1];
-        Timber.d("initMountPoints: Mount point: " + mountPoint);
+        Timber.v("initMountPoints: Mount point: %s", mountPoint);
         String fsType = parts[2];
 
         if (!mountPoint.startsWith("/mnt/asec/")) {

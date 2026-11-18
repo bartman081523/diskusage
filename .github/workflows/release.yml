@@ -1,0 +1,171 @@
+name: Release
+
+# Automatic releases: every push to `main` that changes the app is published as
+# a GitHub release (version taken from version.properties, which is bumped
+# automatically afterwards). Manual runs can request a specific bump.
+on:
+  push:
+    branches: [main, current, master]
+    paths-ignore:
+      - 'version.properties'
+      - '**.md'
+      - 'fastlane/**'
+      - 'docs/**'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump for the next release
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    name: Determine version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Read version.properties
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^versionName=//p' version.properties | tr -d '[:space:]')
+          if [ -z "$version" ]; then
+            echo "::error::versionName missing in version.properties"; exit 1
+          fi
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "Tag $tag already exists - nothing to release."
+            should_release=false
+          else
+            should_release=true
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "should_release=$should_release" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build signed release APK
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android SDK components
+        uses: android-actions/setup-android@v3
+        with:
+          packages: >-
+            platforms;android-37.0
+            build-tools;36.0.0
+            ndk;28.2.13676358
+
+      - name: Prepare signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Building with the configured release keystore."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No RELEASE_KEYSTORE_BASE64 secret - APK will be signed with the debug key."
+          fi
+
+      - name: Assemble release
+        env:
+          ALLOW_DEBUG_SIGNING: 'true'
+          RELEASE_KEYSTORE_FILE: ${{ steps.signing.outputs.signed == 'true' && format('{0}/release.jks', runner.temp) || '' }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          ./gradlew assembleRelease --stacktrace \
+            -PversionName="${{ needs.prepare.outputs.version }}"
+
+      - name: Collect artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          version="${{ needs.prepare.outputs.version }}"
+          cp app/build/outputs/apk/release/*.apk "dist/diskusage-$version.apk"
+          if [ -f app/build/outputs/mapping/release/mapping.txt ]; then
+            cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-$version.txt"
+          fi
+          (cd dist && sha256sum ./*.apk > SHA256SUMS.txt)
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ needs.prepare.outputs.version }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: DiskUsage ${{ needs.prepare.outputs.version }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: |
+            dist/diskusage-${{ needs.prepare.outputs.version }}.apk
+            dist/SHA256SUMS.txt
+
+  bump:
+    name: Bump version for the next release
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version.properties
+        env:
+          BUMP: ${{ github.event.inputs.bump || 'patch' }}
+        run: ./scripts/bump-version.sh "$BUMP"
+
+      - name: Commit version bump
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.properties
+          if git diff --cached --quiet; then
+            echo "No change to version.properties"
+            exit 0
+          fi
+          git commit -m "chore: prepare next development version [skip release]"
+          git push origin HEAD:${GITHUB_REF_NAME}

@@ -20,7 +20,7 @@
 package com.google.android.diskusage.ui;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.os.Bundle;
 import android.os.Handler;
 
@@ -171,11 +171,19 @@ public abstract class LoadableActivity extends AppCompatActivity {
                         handleOutOfMemory(activity);
                     });
                     return;
-                } catch (InterruptedException | IOException | RuntimeException e) {
+                } catch (InterruptedException e) {
+                    error = activity.getString(R.string.scan_interrupted);
+                    Timber.d(e, "LoadFiles: scan interrupted");
+                } catch (IOException | RuntimeException e) {
                     error = e.getClass().getName() + ":" + e.getMessage();
                     Timber.e(e, "LoadFiles: Native error");
                 } catch (final StackOverflowError e) {
                     error = "Filesystem is damaged.";
+                } catch (final Throwable e) {
+                    // Never let the worker thread die silently: the dialog would
+                    // stay on screen forever ("DiskUsage hangs" reports).
+                    error = e.getClass().getName() + ":" + e.getMessage();
+                    Timber.e(e, "LoadFiles: unexpected error");
                 }
                 final String finalError = error;
                 state.root = null;

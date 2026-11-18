@@ -12,7 +12,9 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.widget.SearchView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.forEach
 import com.google.android.diskusage.R
 import com.google.android.diskusage.databinding.AboutDialogBinding
@@ -63,9 +65,17 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
                     it.isIconified = false
                     it.setQuery(searchPattern, false)
                 }
+                it.setOnSearchClickListener {
+                    // Give the query the whole toolbar instead of squeezing it
+                    // next to an ellipsized title.
+                    (diskusage as? AppCompatActivity)?.supportActionBar
+                        ?.setDisplayShowTitleEnabled(false)
+                }
                 it.setOnCloseListener {
                     Timber.d("Search process closed")
                     searchPattern = null
+                    (diskusage as? AppCompatActivity)?.supportActionBar
+                        ?.setDisplayShowTitleEnabled(true)
                     diskusage.applyPatternNewRoot(masterRoot, null)
                     false
                 }
@@ -97,7 +107,24 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
     fun wrapAndSetContentView(view: View?, newRoot: FileSystemSuperRoot?) {
         masterRoot = newRoot
         updateMenu()
-        diskusage.setContentView(view)
+        // Swap only the content container: the toolbar and the window insets
+        // stay in place. Replacing the whole content view (the old behaviour)
+        // dropped the toolbar and broke edge-to-edge on Android 15+.
+        val container = diskusage.findViewById<ViewGroup>(R.id.container)
+        if (container == null) {
+            diskusage.setContentView(view)
+        } else {
+            container.removeAllViews()
+            if (view != null) {
+                container.addView(
+                    view,
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+            }
+        }
         diskusage.invalidateOptionsMenu()
     }
 
@@ -151,7 +178,7 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
         }
 
         menu.item(R.string.button_delete) {
-            diskusage.askForDeletion(selectedEntity!!)
+            selectedEntity?.let { diskusage.askForDeletion(it) }
         }.apply {
             viewModel.deleteButton.observe(diskusage) {
                 isVisible = it
@@ -183,7 +210,7 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
                 Html.fromHtml(
                     diskusage.getString(
                         R.string.about_view_source_code,
-                        "<b><a href=\"https://github.com/IvanVolosyuk/diskusage\">GitHub</a></b>"
+                        "<b><a href=\"https://github.com/bartman081523/diskusage\">GitHub</a></b>"
                     ),
                     Html.FROM_HTML_MODE_LEGACY
                 )
@@ -192,7 +219,7 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
                 Html.fromHtml(
                     diskusage.getString(
                         R.string.about_view_source_code,
-                        "<b><a href=\"https://github.com/IvanVolosyuk/diskusage\">GitHub</a></b>"
+                        "<b><a href=\"https://github.com/bartman081523/diskusage\">GitHub</a></b>"
                     )
                 )
             }
@@ -247,9 +274,10 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
             viewModel.disableShowButton()
         }
 
-        val fileOrNotSearching = searchPattern == null || selectedEntity!!.children == null
-        val mountPoint = MountPoint.getForKey(diskusage, diskusage.getKey())
-        if (view && selectedEntity!!.isDeletable && fileOrNotSearching && mountPoint.isDeleteSupported) {
+        val entity = selectedEntity ?: return
+        val fileOrNotSearching = searchPattern == null || entity.children == null
+        val mountPoint = MountPoint.getForKey(diskusage, diskusage.getKey()) ?: return
+        if (view && entity.isDeletable && fileOrNotSearching && mountPoint.isDeleteSupported) {
             viewModel.enableDeleteButton()
         } else {
             viewModel.disableDeleteButton()

@@ -19,7 +19,7 @@
  -->
 <resources>
     <string name="app_name">DiskUsage</string>
-<string name="app_description">Utility to examine SD card content and cleanup some space there.</string>
+<string name="app_description">Find the files and directories that use the most space and free up storage again.</string>
 <string name="scaning_directories">Scanning directories...</string>
 <string name="button_show">Show</string>
 <string name="button_delete">Delete</string>
@@ -83,7 +83,7 @@
     <string name="button_install_filemanager">Install Solid Explorer</string>
     <string name="graph_media">Media</string>
     <string name="graph_apps">Apps</string>
-    <string name="warn_on_file_select">Press menu to preview or delete</string>
+    <string name="warn_on_file_select">Double tap to open - menu for more options</string>
     <string-array name="select_apps">
   <item>On device.</item>
   <item>On SD card.</item>
@@ -99,4 +99,12 @@
     <string name="rederer">Renderer</string>
     <string name="software_renderer">Software Renderer</string>
     <string name="hardware_renderer">Hardware Renderer</string>
+    <string name="dialog_all_files_access_title">All files access needed</string>
+    <string name="dialog_all_files_access_desc">To analyse the whole storage DiskUsage needs the "All files access" permission.\n\nOpen Settings and allow access for DiskUsage, then return to this screen.</string>
+    <string name="show_hide_mount_points">Show/hide mount points</string>
+    <string name="root_required">Root required</string>
+    <string name="usage_info">Used %1$s of %2$s (%3$d%%)</string>
+    <string name="usage_info_unknown">Used &lt;no information&gt;</string>
+    <string name="scan_interrupted">Scan interrupted</string>
+    <string name="action_permissions">Permissions</string>
 </resources>

@@ -64,9 +64,9 @@ public abstract class AbstractRenderingThread extends Thread {
       }
       
     } catch (ExitException e) {
-      Timber.e(e, "run: Rendering thread exited cleanly");
+      Timber.d(e, "run: rendering thread stopped");
     } catch (InterruptedException e) {
-      Timber.e(e, "run: Rendering thread was interrupted");
+      Timber.d(e, "run: rendering thread was interrupted");
 
     }
   }

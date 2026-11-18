@@ -158,6 +158,10 @@ public class FileSystemState {
   private float maxLevels = 3.2f;
 
   private boolean fullZoom;
+
+  private static final long DOUBLE_TAP_TIMEOUT = 350L;
+  private FileSystemEntry lastTapEntry;
+  private long lastTapTime;
   private boolean warnOnFileSelect;
 
   private float touchDepth;
@@ -502,7 +506,27 @@ public class FileSystemState {
           return true;
         }
         if (masterRoot.depth(touchEntry) > (int)touchDepth + 1) return true;
-        touchSelect(touchEntry, ev.getEventTime());
+
+        // Double tap on a file (or an empty directory) opens it with the
+        // registered viewer. Tapping once only selects, so users could not open
+        // a file without going through the menu (issue #89).
+        final long eventTime = ev.getEventTime();
+        final boolean isLeaf = touchEntry.children == null || touchEntry.children.length == 0;
+        final boolean isSpecial = touchEntry == masterRoot.children[0]
+            || touchEntry instanceof FileSystemFreeSpace
+            || touchEntry instanceof FileSystemSystemSpace;
+        if (isLeaf && !isSpecial
+            && lastTapEntry == touchEntry
+            && eventTime - lastTapTime < DOUBLE_TAP_TIMEOUT) {
+          lastTapEntry = null;
+          lastTapTime = 0;
+          mainThreadAction.view(touchEntry);
+          return true;
+        }
+        lastTapEntry = touchEntry;
+        lastTapTime = eventTime;
+
+        touchSelect(touchEntry, eventTime);
         return true;
       }
       touchMovement = false;

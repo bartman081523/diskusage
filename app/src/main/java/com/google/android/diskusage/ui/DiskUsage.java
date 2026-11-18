@@ -20,19 +20,19 @@
 package com.google.android.diskusage.ui;
 
 import android.app.ActivityManager;
-import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.ClipData;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.FileUriExposedException;
 import android.os.Handler;
 import android.provider.Settings;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -60,6 +60,7 @@ import com.google.android.diskusage.filesystem.entity.FileSystemPackage;
 import com.google.android.diskusage.filesystem.entity.FileSystemRoot;
 import com.google.android.diskusage.filesystem.entity.FileSystemSuperRoot;
 import com.google.android.diskusage.filesystem.entity.FileSystemSystemSpace;
+import com.google.android.diskusage.ui.common.EdgeToEdge;
 import com.google.android.diskusage.ui.common.ScanProgressDialog;
 import timber.log.Timber;
 
@@ -69,6 +70,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 
 import splitties.toast.ToastKt;
 
@@ -96,8 +98,12 @@ public class DiskUsage extends LoadableActivity {
     super.onCreate(icicle);
     final DiskUsageViewModel viewModel = new ViewModelProvider(this).get(DiskUsageViewModel.class);
     Timber.d("DiskUsage.onCreate()");
+    EdgeToEdge.enable(this);
     ActivityCommonBinding binding = ActivityCommonBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
+    EdgeToEdge.applyInsets(binding.getRoot());
+    binding.toolbar.setVisibility(android.view.View.VISIBLE);
+    setSupportActionBar(binding.toolbar);
     menu.onCreate(viewModel);
     Intent i = getIntent();
 
@@ -117,6 +123,7 @@ public class DiskUsage extends LoadableActivity {
     }
     Timber.d("DiskUsage.onCreate(), rootPath = %s, receivedState = %s",
             mountPoint.getRoot(), receivedState);
+    setTitle(mountPoint.getTitle());
     if (receivedState != null) onRestoreInstanceState(receivedState);
   }
 
@@ -258,10 +265,16 @@ public class DiskUsage extends LoadableActivity {
     }
   }
 
+  /**
+   * Opens the selected entry in an external application.
+   *
+   * Android 11+ requires a content URI plus an explicit read grant; the old
+   * code used a file:// URI, a bogus "binary/octet-stream" fallback and a
+   * provider whose paths didn't cover removable volumes. That combination is
+   * the root cause of the "no viewer found" and "video opens in a strange
+   * mode" reports.
+   */
   public void view(FileSystemEntry entry) {
-    Intent intent = new Intent(Intent.ACTION_VIEW);
-    intent.addCategory(Intent.CATEGORY_DEFAULT);
-
     if (entry instanceof FileSystemEntrySmall) {
       entry = entry.parent;
     }
@@ -274,92 +287,87 @@ public class DiskUsage extends LoadableActivity {
       return;
     }
 
-    String path = entry.absolutePath();
-    File file = new File(path);
-    Uri uri = Uri.fromFile(file);
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", file);
+    final String path = entry.absolutePath();
+    final File file = new File(path);
+    if (!file.exists()) {
+      ToastKt.toast(getString(R.string.path_doesnt_exist, path));
+      return;
     }
 
-    if (file.isDirectory()) {
-      // Go on with default file manager
-      // Shoud this be optional?
-      intent = new Intent(Intent.ACTION_VIEW);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      intent.setDataAndType(uri, "inode/directory");
-
-      try {
-        startActivity(intent);
-        return;
-      } catch (ActivityNotFoundException ignored) {
-      }
-
-      intent = new Intent("org.openintents.action.VIEW_DIRECTORY");
-      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      intent.setData(uri);
-
-      try {
-        startActivity(intent);
-        return;
-      } catch (ActivityNotFoundException|FileUriExposedException ignored) {
-      }
-
-      intent = new Intent("org.openintents.action.PICK_DIRECTORY");
-      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      intent.setData(uri);
-      intent.putExtra("org.openintents.extra.TITLE",
-          getString(R.string.title_in_oi_file_manager));
-      intent.putExtra("org.openintents.extra.BUTTON_TEXT",
-          getString(R.string.button_text_in_oi_file_manager));
-
-      try {
-        startActivity(intent);
-        return;
-      } catch (ActivityNotFoundException|FileUriExposedException ignored) {
-      }
-
-      // old Astro
-      intent = new Intent(Intent.ACTION_VIEW);
-      intent.addCategory(Intent.CATEGORY_DEFAULT);
-      intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      intent.setDataAndType(uri, "vnd.android.cursor.item/com.metago.filemanager.dir");
-
-      try {
-        startActivity(intent);
-        return;
-      } catch (ActivityNotFoundException|FileUriExposedException ignored) {
-      }
-
+    final Uri uri;
+    try {
+      uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", file);
+    } catch (IllegalArgumentException e) {
+      Timber.w(e, "No provider path configured for %s", path);
       ToastKt.toast(R.string.no_viewer_found);
       return;
     }
 
-    String fileName = entry.name;
-    int dot = fileName.lastIndexOf(".");
-    Log.d("diskusage", "name: " + fileName + " path: " + path + " dot: " + dot);
-    if (dot != -1) {
-      String extension = fileName.substring(dot + 1).toLowerCase();
-
-      MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
-      String mime = mimeTypeMap.getMimeTypeFromExtension(extension);
-      Log.d("diskusage", "extension: " + extension + " mime: " + mime);
-
-      try {
-        intent = new Intent(Intent.ACTION_VIEW);
-        intent.addCategory(Intent.CATEGORY_DEFAULT);
-        if (mime != null) {
-          intent.setDataAndType(uri, mime);
-        } else {
-          intent.setDataAndType(uri, "binary/octet-stream");
-        }
-        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(intent);
-        return;
-      } catch (ActivityNotFoundException|FileUriExposedException ignored) {
-        Log.e("diskusage", "Can't open viewer and crash", ignored);
-      }
+    if (file.isDirectory()) {
+      viewDirectory(uri);
+      return;
     }
+
+    if (startViewIntent(uri, file.getName(), guessMimeType(file.getName()))) return;
+    // Unknown extension or no handler for the specific type: let the user pick.
+    if (startViewIntent(uri, file.getName(), "*/*")) return;
+    ToastKt.toast(R.string.no_viewer_found);
+  }
+
+  private static String guessMimeType(String fileName) {
+    int dot = fileName.lastIndexOf('.');
+    if (dot < 0 || dot == fileName.length() - 1) return null;
+    String extension = fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
+    return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+  }
+
+  private boolean startViewIntent(Uri uri, String name, String mime) {
+    Intent intent = new Intent(Intent.ACTION_VIEW);
+    intent.addCategory(Intent.CATEGORY_DEFAULT);
+    intent.setDataAndType(uri, mime == null ? "*/*" : mime);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    // Explicit grant: without ClipData some viewers lose access to the URI.
+    intent.setClipData(ClipData.newRawUri(name, uri));
+    try {
+      startActivity(intent);
+      return true;
+    } catch (ActivityNotFoundException | SecurityException e) {
+      Timber.d(e, "No activity for %s (%s)", uri, mime);
+      return false;
+    }
+  }
+
+  private void viewDirectory(Uri uri) {
+    // Modern file managers advertise one of these directory types.
+    for (String mime : new String[] {"resource/folder", "inode/directory",
+        "vnd.android.document/directory"}) {
+      if (startViewIntent(uri, "folder", mime)) return;
+    }
+
+    // Legacy integrations (OI File Manager, Astro, ...).
+    Intent intent = new Intent("org.openintents.action.VIEW_DIRECTORY");
+    intent.setData(uri);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    intent.setClipData(ClipData.newRawUri("folder", uri));
+    try {
+      startActivity(intent);
+      return;
+    } catch (ActivityNotFoundException | SecurityException ignored) {
+    }
+
+    intent = new Intent("org.openintents.action.PICK_DIRECTORY");
+    intent.setData(uri);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    intent.setClipData(ClipData.newRawUri("folder", uri));
+    intent.putExtra("org.openintents.extra.TITLE", getString(R.string.title_in_oi_file_manager));
+    intent.putExtra("org.openintents.extra.BUTTON_TEXT",
+        getString(R.string.button_text_in_oi_file_manager));
+    try {
+      startActivity(intent);
+      return;
+    } catch (ActivityNotFoundException | SecurityException ignored) {
+    }
+
     ToastKt.toast(R.string.no_viewer_found);
   }
 
@@ -436,7 +444,7 @@ public class DiskUsage extends LoadableActivity {
     @Override
     int maxHeap() {
       ActivityManager manager = (ActivityManager) DiskUsage.this.getSystemService(Context.ACTIVITY_SERVICE);
-      return manager.getMemoryClass() * 1024 * 1024;
+      return manager.getLargeMemoryClass() * 1024 * 1024;
     }
   }
   MemoryClass memoryClass = MemoryClass.getInstance(this);
@@ -470,11 +478,15 @@ public class DiskUsage extends LoadableActivity {
         blockSize = 512;
       }
     }
-    public String formatUsageInfo() {
-      if (totalBlocks == 0) return "Used <no information>";
-      return String.format("Used %s of %s",
-          FileSystemEntry.calcSizeString(busyBlocks * blockSize),
-          FileSystemEntry.calcSizeString(totalBlocks * blockSize));
+    public String formatUsageInfo(Context context) {
+      if (totalBlocks == 0) return context.getString(R.string.usage_info_unknown);
+      long usedBytes = busyBlocks * blockSize;
+      long totalBytes = totalBlocks * blockSize;
+      int percent = totalBytes > 0 ? (int) (usedBytes * 100 / totalBytes) : 0;
+      return context.getString(R.string.usage_info,
+          FileSystemEntry.calcSizeString(usedBytes),
+          FileSystemEntry.calcSizeString(totalBytes),
+          percent);
     }
   }
 
@@ -518,7 +530,11 @@ public class DiskUsage extends LoadableActivity {
       handler.post(progressUpdater);
       rootElement = scanner.scan(mountPoint);
       handler.removeCallbacks(progressUpdater);
-    } catch (RuntimeException e) {
+      if (rootElement == null || rootElement.children == null) {
+        throw new IOException("Native scanner returned no data");
+      }
+    } catch (IOException | RuntimeException e) {
+      Timber.w(e, "Native scan failed, falling back to the Java scanner");
       final Scanner scanner = new Scanner(20, stats.blockSize, stats.busyBlocks, heap);
       progressUpdater = makeProgressUpdater(scanner, stats);
       handler.post(progressUpdater);
