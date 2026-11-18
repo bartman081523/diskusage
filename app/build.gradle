@@ -144,9 +144,8 @@ dependencies {
 androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.each { output ->
-            if (output instanceof com.android.build.api.variant.impl.VariantOutputImpl) {
-                output.outputFileName.set("diskusage-${variant.name}-${resolvedVersionName}.apk")
-            }
+            // Public variant API, no AGP internals.
+            output.outputFileName.set("diskusage-${variant.name}-${resolvedVersionName}.apk")
         }
     }
 }

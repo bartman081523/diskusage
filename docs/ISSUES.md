@@ -111,8 +111,12 @@ Legend:
 ## Verification
 
 * `./gradlew assembleDebug`, `assembleRelease`, `testDebugUnitTest`, `lintDebug`
-  pass locally (AGP 9.5.1, Gradle 9.9.1, JDK 17, SDK 37, NDK r28c).
-* The shipped `libscan.so` uses 16 KB segment alignment for the 64-bit ABIs; the
-  CI workflow enforces this on every push.
-* Runtime behaviour on a physical device was not part of this environment, so
-  device-specific issues (vendor ROMs, root) are marked 🧩/⛔ rather than ✅.
+  pass (AGP 9.5.1, Gradle 9.9.1, JDK 17, SDK 37, NDK r28c).
+* The shipped `libscan.so` uses 16 KB LOAD-segment alignment for the 64-bit ABIs
+  and the APK is 16 KB zip-aligned; the CI workflow enforces this on every push.
+* Runtime smoke test on an Android 15 (API 35) emulator with the minified release
+  build: volume detection, native scan, graph, selection, double tap, file/app
+  opening, search, renderer switch, delete confirmation and the About dialog were
+  exercised. Screenshots are not checked in.
+* Device-specific issues (vendor ROMs, root, TV hardware) are marked 🧩/⛔ rather
+  than ✅ because they cannot be verified in this environment.
