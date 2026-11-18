@@ -34,6 +34,8 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+        // AGP 9 disables resValues by default; the debug build overrides app_name.
+        resValues = true
     }
 
     compileOptions {
