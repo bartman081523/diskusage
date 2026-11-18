@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-11-18
+
+### Fixed
+
+* **"Show" on a folder** now offers the system Files app instead of a random
+  selection of apps. The external storage document URI is used (Android has no
+  standard "open this folder" intent) and the read-grant flag is no longer added
+  for URIs the app does not own — that flag made the system throw a
+  `SecurityException`, which silently fell through to a useless chooser.
+  Folders that cannot be opened now offer to copy the path.
+* **Crash when app data was just cleared** (`NullPointerException` in the app
+  list): `getExternalCacheDir()`/`getExternalFilesDir()` can return `null`
+  (MIUI/HyperOS, full storage), which aborted the whole application list.
+* **Scan progress stuck at 0 %**: the native tree walker buffered the entire
+  result before handing it over. It now streams records while walking, so the
+  progress bar and the current path update live and memory stays flat.
+* **Usage access shown as denied although the toggle was enabled**: several
+  ROMs keep the app-op at "default" after the user grants it. The state is now
+  verified against `UsageStatsManager` and no longer blocks startup; it is
+  shown in *menu → Permissions* together with "All files access".
+* **"Internal storage" was labelled "SD card"** in German (and "Storage card" in
+  English) although it is the primary volume.
+* Progress dialog layout: the percentage was printed on top of the path.
+
 ## [5.0.0] - 2026-11-18
 
 Complete modernization of the Android build and the app itself.
@@ -55,5 +79,6 @@ Complete modernization of the Android build and the app itself.
 * NPE when the option menu updated without a selection.
 * Automatic selection when only one volume is available.
 
-[Unreleased]: https://github.com/bartman081523/diskusage/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/bartman081523/diskusage/compare/v5.0.1...HEAD
+[5.0.1]: https://github.com/bartman081523/diskusage/releases/tag/v5.0.1
 [5.0.0]: https://github.com/bartman081523/diskusage/releases/tag/v5.0.0

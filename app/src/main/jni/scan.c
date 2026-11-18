@@ -47,6 +47,9 @@
 #include <pthread.h>
 
 #define MAX_OUTPUT_BYTES (128u * 1024u * 1024u)
+/* Records are forwarded to Java once this many bytes accumulated. Streaming
+   keeps memory flat and lets the UI show progress while the tree is walked. */
+#define FLUSH_THRESHOLD (32u * 1024u)
 
 static dev_t dev;
 static const char sep = 0;
@@ -56,6 +59,12 @@ static size_t out_len;
 static size_t out_cap;
 static int out_overflow;
 static pthread_mutex_t out_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/* JNI sink used while a scan is running. Guarded by out_lock. */
+static JNIEnv *sink_env;
+static jobject sink_object;
+static jmethodID sink_on_data;
+static int sink_aborted;
 
 struct Entity {
   long long sizeInBlocks;
@@ -72,8 +81,11 @@ static const char *getName(const char *path) {
   return slash ? slash + 1 : path;
 }
 
+/* Defined below; forwards the current buffer to the Java sink. */
+static void flush_output(void);
+
 static int out_reserve(size_t extra) {
-  if (out_overflow) return -1;
+  if (out_overflow || sink_aborted) return -1;
   if (out_len + extra > MAX_OUTPUT_BYTES) {
     out_overflow = 1;
     return -1;
@@ -96,6 +108,9 @@ static void out_bytes(const char *data, size_t len) {
   if (out_reserve(len) != 0) return;
   memcpy(out_buf + out_len, data, len);
   out_len += len;
+  if (out_len >= FLUSH_THRESHOLD) {
+    flush_output();
+  }
 }
 
 static void out_char(char c) {
@@ -115,6 +130,31 @@ static void out_long(long long value) {
 static void out_reset(void) {
   out_len = 0;
   out_overflow = 0;
+  sink_aborted = 0;
+}
+
+static void flush_output(void) {
+  if (out_len == 0) return;
+  if (sink_env == NULL || sink_object == NULL || sink_on_data == NULL) {
+    /* Buffered mode (main(): write everything at the end). */
+    return;
+  }
+  jbyteArray chunk = (*sink_env)->NewByteArray(sink_env, (jsize) out_len);
+  if (chunk == NULL) {
+    (*sink_env)->ExceptionClear(sink_env);
+    sink_aborted = 1;
+    out_len = 0;
+    return;
+  }
+  (*sink_env)->SetByteArrayRegion(sink_env, chunk, 0, (jsize) out_len,
+                                  (const jbyte *) out_buf);
+  (*sink_env)->CallVoidMethod(sink_env, sink_object, sink_on_data, chunk);
+  (*sink_env)->DeleteLocalRef(sink_env, chunk);
+  out_len = 0;
+  if ((*sink_env)->ExceptionCheck(sink_env)) {
+    (*sink_env)->ExceptionClear(sink_env);
+    sink_aborted = 1;
+  }
 }
 
 static void dump(char type) {
@@ -267,37 +307,49 @@ static void scan_tree(const char *path) {
 }
 
 /*
- * JNI entry point: runs the scan and returns the serialised tree.
+ * JNI entry point: walks the tree and streams the serialised records to
+ * `sink.onData(byte[])`. The Java side consumes them incrementally, so the
+ * progress dialog updates while the scan is running.
  *
- * Returns NULL when the tree does not fit into MAX_OUTPUT_BYTES; the caller
- * then falls back to the (slower) Java scanner.
+ * Returns JNI_TRUE when the whole tree was delivered.
  */
-JNIEXPORT jbyteArray JNICALL
+JNIEXPORT jboolean JNICALL
 Java_com_google_android_diskusage_datasource_fast_NativeScannerStream_scanNative(
-    JNIEnv *env, jclass clazz, jstring jpath) {
+    JNIEnv *env, jclass clazz, jstring jpath, jobject sink) {
   (void) clazz;
   const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
-  if (path == NULL) return NULL;
+  if (path == NULL) return JNI_FALSE;
+
+  jclass sink_class = (*env)->GetObjectClass(env, sink);
+  if (sink_class == NULL) {
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+    return JNI_FALSE;
+  }
+  jmethodID on_data = (*env)->GetMethodID(env, sink_class, "onData", "([B)V");
+  if (on_data == NULL) {
+    (*env)->ExceptionClear(env);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+    return JNI_FALSE;
+  }
 
   pthread_mutex_lock(&out_lock);
+  sink_env = env;
+  sink_object = sink;
+  sink_on_data = on_data;
   out_reset();
   scan_tree(path);
-  (*env)->ReleaseStringUTFChars(env, jpath, path);
-
-  jbyteArray result = NULL;
-  if (!out_overflow && out_len > 0) {
-    result = (*env)->NewByteArray(env, (jsize) out_len);
-    if (result != NULL) {
-      (*env)->SetByteArrayRegion(env, result, 0, (jsize) out_len,
-                                 (const jbyte *) out_buf);
-    }
-  }
+  flush_output();
+  jboolean complete = (!sink_aborted && !out_overflow) ? JNI_TRUE : JNI_FALSE;
+  sink_env = NULL;
+  sink_object = NULL;
+  sink_on_data = NULL;
   free(out_buf);
   out_buf = NULL;
   out_cap = 0;
   out_len = 0;
   pthread_mutex_unlock(&out_lock);
-  return result;
+  (*env)->ReleaseStringUTFChars(env, jpath, path);
+  return complete;
 }
 
 /* Fallback entry point for the legacy child-process mode. */

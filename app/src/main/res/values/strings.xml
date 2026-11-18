@@ -55,7 +55,7 @@
 <string name="dir_name_size">%1$s (%2$s)</string>
 <string name="apps_bulk_uninstall_not_supported">Uninstall multiple apps not supported</string>
 <string name="app_storage">App Storage</string>
-<string name="storage_card">Storage card</string>
+<string name="storage_card">Internal storage</string>
 <string name="delete_summary">%1$d files, total size: %2$s</string>
 <string name="change_filter">Filter...</string>
 <string name="apps_filter">Apps Filter</string>
@@ -107,4 +107,13 @@
     <string name="usage_info_unknown">Used &lt;no information&gt;</string>
     <string name="scan_interrupted">Scan interrupted</string>
     <string name="action_permissions">Permissions</string>
+    <string name="permission_granted">granted</string>
+    <string name="permission_denied">not granted</string>
+    <string name="permissions_dialog_message">All files access: %1$s\nUsage access: %2$s\n\nAll files access is required so that DiskUsage can read every folder. Without it only the app\'s own files are visible.\n\nUsage access is optional and only improves how precise the per-app sizes are.\n\nBoth are special app permissions, so the normal permission list in Android\'s app settings stays empty.</string>
+    <string name="button_all_files_access">All files access</string>
+    <string name="button_usage_access">Usage access</string>
+    <string name="button_open_settings">Open settings</string>
+    <string name="no_file_manager_found_desc">No app can open this folder directly.\n\nPath:\n%1$s</string>
+    <string name="button_copy_path">Copy path</string>
+    <string name="path_copied">Path copied</string>
 </resources>

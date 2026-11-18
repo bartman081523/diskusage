@@ -80,7 +80,7 @@ Legend:
 | 86 | Regression: no viewer found | ✅ | Content URIs with explicit read grants, real MIME types, `*/*` fallback and directory MIME types (`resource/folder`). |
 | 88 | Opening a video in a "strange" mode | ✅ | Same fix: the correct MIME type is sent instead of `binary/octet-stream`. |
 | 89 | Double click on a file has no effect | ✅ | Double-tap opens the entry; single tap still selects. |
-| 72 | Integration with Material Files | ✅ | `content://` URI + `resource/folder`/`inode/directory`, matching Material Files' intent filters. |
+| 72 | Integration with Material Files | ✅ | `content://` URI + `resource/folder`/`inode/directory`, matching Material Files' intent filters. Folders that no app can open fall back to the system documents provider (Files app) and finally to a copy-path dialog. |
 | 74 | Audiobook file type support | ✅ | File type detection now works for any extension known to `MimeTypeMap`, with a `*/*` fallback. |
 | 53 | No viewer found | ✅ | Same as #86. |
 | 60 | Changing default file manager | 📄 | Android decides which app handles `VIEW`; DiskUsage offers all candidates. |

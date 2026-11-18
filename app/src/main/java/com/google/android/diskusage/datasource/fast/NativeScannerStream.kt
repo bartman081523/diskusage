@@ -1,24 +1,29 @@
 package com.google.android.diskusage.datasource.fast
 
+import androidx.annotation.Keep
 import com.google.android.diskusage.utils.AppHelper.appContext
 import com.google.android.diskusage.utils.DeviceHelper.isDeviceRooted
-import org.jetbrains.annotations.Contract
 import timber.log.Timber
-import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 
 /**
  * Reads the serialised directory tree produced by `libscan.so`.
  *
- * The tree is generated through JNI (see `app/src/main/jni/scan.c`). The old
- * approach — executing the shared library as a child process — no longer works
- * on Android 10+: the ELF has no startup routine and the platform restricts
- * executing app-provided binaries. It is only attempted for root mode.
+ * The tree is generated in-process through JNI (`app/src/main/jni/scan.c`) and
+ * streamed chunk by chunk into a pipe, so the parser and the progress dialog see
+ * data while the scan is still running. The historical approach — executing the
+ * shared library as a child process — does not work on Android 10+ (the ELF has
+ * no startup routine and the platform forbids executing app binaries); it is
+ * only attempted for root mode.
  */
 class NativeScannerStream private constructor(
     private val input: InputStream,
-    private val process: Process?
+    private val process: Process?,
+    private val producer: Thread?
 ) : InputStream() {
 
     @Throws(IOException::class)
@@ -34,9 +39,15 @@ class NativeScannerStream private constructor(
     @Throws(IOException::class)
     override fun close() {
         try {
+            // Closing the read end unblocks a producer that is stuck writing to
+            // a full pipe.
             input.close()
         } finally {
             process?.let { awaitExit(it) }
+            producer?.let { thread ->
+                thread.interrupt()
+                runCatching { thread.join(CLOSE_TIMEOUT_MS) }
+            }
         }
     }
 
@@ -63,10 +74,20 @@ class NativeScannerStream private constructor(
         process.destroyForcibly()
     }
 
+    /** Receives the chunks of the serialised tree from native code. */
+    class NativeSink internal constructor(private val out: OutputStream) {
+        @Keep
+        fun onData(chunk: ByteArray) {
+            out.write(chunk)
+        }
+    }
+
     companion object Factory {
         private const val LIBSCAN = "libscan.so"
         private const val EXIT_TIMEOUT_MS = 5_000L
+        private const val CLOSE_TIMEOUT_MS = 1_000L
         private const val POLL_INTERVAL_MS = 20L
+        private const val PIPE_SIZE = 64 * 1024
 
         private val nativeAvailable: Boolean = try {
             System.loadLibrary("scan")
@@ -77,7 +98,6 @@ class NativeScannerStream private constructor(
         }
 
         @JvmStatic
-        @Contract("_, _ -> new")
         @Throws(IOException::class)
         fun create(path: String, rootRequired: Boolean): NativeScannerStream {
             if (rootRequired && isDeviceRooted()) {
@@ -85,13 +105,9 @@ class NativeScannerStream private constructor(
             }
             if (nativeAvailable) {
                 try {
-                    val data = scanNative(path)
-                    if (data != null && data.isNotEmpty()) {
-                        return NativeScannerStream(ByteArrayInputStream(data), null)
-                    }
-                    Timber.w("native scan of %s produced no data", path)
+                    return nativeScanner(path)
                 } catch (t: Throwable) {
-                    Timber.w(t, "native scan of %s failed", path)
+                    Timber.w(t, "native scan of %s could not be started", path)
                 }
             }
             // Fall back to the child process; the caller falls back to the Java
@@ -99,19 +115,40 @@ class NativeScannerStream private constructor(
             return runScanner(path)
         }
 
+        private fun nativeScanner(path: String): NativeScannerStream {
+            val pipeOut = PipedOutputStream()
+            val pipeIn = PipedInputStream(PIPE_SIZE)
+            pipeOut.connect(pipeIn)
+            val sink = NativeSink(pipeOut)
+            val producer = Thread({
+                var complete = false
+                try {
+                    complete = scanNative(path, sink)
+                } catch (t: Throwable) {
+                    Timber.w(t, "native scan of %s failed", path)
+                } finally {
+                    if (!complete) {
+                        Timber.w("native scan of %s was not completed", path)
+                    }
+                    runCatching { pipeOut.close() }
+                }
+            }, "diskusage-scan")
+            producer.isDaemon = true
+            producer.start()
+            return NativeScannerStream(pipeIn, null, producer)
+        }
+
         /**
-         * Runs the tree walker in-process. Returns the serialised tree, or
-         * `null` when it does not fit into the native output buffer.
+         * Runs the tree walker in-process and streams the serialised tree into
+         * [sink]. Returns false when the walk was aborted.
          */
         @JvmStatic
-        private external fun scanNative(path: String): ByteArray?
+        private external fun scanNative(path: String, sink: NativeSink): Boolean
 
         private fun runScanner(root: String): NativeScannerStream {
             val libscanPath = "${appContext.applicationInfo.nativeLibraryDir}/$LIBSCAN"
-            val process = ProcessBuilder(libscanPath, root)
-                .redirectErrorStream(false)
-                .start()
-            return NativeScannerStream(process.inputStream, process)
+            val process = ProcessBuilder(libscanPath, root).start()
+            return NativeScannerStream(process.inputStream, process, null)
         }
 
         private fun runScannerAsRoot(root: String): NativeScannerStream {
@@ -125,7 +162,7 @@ class NativeScannerStream private constructor(
                 out.write("exit\n".toByteArray())
                 out.flush()
             }
-            return NativeScannerStream(su.inputStream, su)
+            return NativeScannerStream(su.inputStream, su, null)
         }
     }
 }

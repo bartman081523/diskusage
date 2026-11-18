@@ -23,6 +23,7 @@ import com.google.android.diskusage.filesystem.entity.FileSystemEntry
 import com.google.android.diskusage.filesystem.entity.FileSystemSpecial
 import com.google.android.diskusage.filesystem.entity.FileSystemSuperRoot
 import com.google.android.diskusage.filesystem.mnt.MountPoint
+import com.google.android.diskusage.ui.common.Permissions
 import com.google.android.diskusage.utils.AppIconCache.getOrLoadBitmap
 import com.google.android.diskusage.utils.item
 import splitties.resources.styledColor
@@ -193,6 +194,10 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
             }
         }
 
+        menu.item(R.string.action_permissions) {
+            showPermissionsDialog()
+        }
+
         viewModel.toolbarActionButtonVisible.observe(diskusage) {
             menu.forEach { item -> item.isVisible = it }
         }
@@ -243,6 +248,36 @@ class DiskUsageMenu(val diskusage: DiskUsage) {
                 .show()
         }
         updateMenu()
+    }
+
+    /**
+     * Shows the state of the two special permissions and links to the right
+     * system settings. Both are app-ops, so Android's own "Permissions" screen
+     * for the app lists nothing — which used to look like "no permissions
+     * requested".
+     */
+    private fun showPermissionsDialog() {
+        val granted = diskusage.getString(R.string.permission_granted)
+        val denied = diskusage.getString(R.string.permission_denied)
+        val allFiles = Permissions.hasAllFilesAccess()
+        val usage = Permissions.hasUsageAccess(diskusage)
+        AlertDialog.Builder(diskusage)
+            .setTitle(R.string.action_permissions)
+            .setMessage(
+                diskusage.getString(
+                    R.string.permissions_dialog_message,
+                    if (allFiles) granted else denied,
+                    if (usage) granted else denied
+                )
+            )
+            .setPositiveButton(R.string.button_all_files_access) { _, _ ->
+                Permissions.openAllFilesAccessSettings(diskusage)
+            }
+            .setNeutralButton(R.string.button_usage_access) { _, _ ->
+                Permissions.openUsageAccessSettings(diskusage)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun updateMenu() {

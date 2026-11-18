@@ -127,6 +127,10 @@ public class Apps2SDLoader {
             apkBytes = stats[0];
             dataBytes = stats[1];
             cacheBytes = stats[2];
+            if (numLoadedPackages == 0) {
+              Timber.d("load: storage stats available, first app %s -> apk=%s data=%s cache=%s",
+                  pkg, apkBytes, dataBytes, cacheBytes);
+            }
           } catch (SecurityException e) {
             // Usage access not granted: keep listing apps, only sizes degrade.
             statsAccessDenied = true;
