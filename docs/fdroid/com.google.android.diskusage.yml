@@ -139,7 +139,7 @@ Builds:
 
 MaintainerNotes: |-
   This fork (bartman081523/diskusage) continues the app after the upstream
-  repository stopped at 5.0-alpha1 (2024). It modernised the build (AGP 9.5.1,
+  repository stopped at 5.0-alpha1 (2023-12-07). It modernised the build (AGP 9.5.1,
   Gradle 9.9.1, JDK 17, compileSdk/targetSdk 37, NDK r28c) and fixed the
   scanner, volume detection and Android 15/16/17 behaviour.
 
@@ -147,6 +147,15 @@ MaintainerNotes: |-
   tags are v<versionName>. If the buildserver image does not ship
   platforms;android-37.0 and build-tools;36.0.0 yet, they can be installed in
   prebuild with $$SDK$$/cmdline-tools/latest/bin/sdkmanager.
+
+  Upstream status: the original repository is unmaintained in practice. The last
+  release is 5.0-alpha1 (2023-12-07), there have been no tags since, and its own
+  README already points users at a maintained fork ("For a better maintained
+  version of this project have a look at
+  https://github.com/WhiredPlanck/diskusage"). The work of this fork was offered
+  upstream as https://github.com/IvanVolosyuk/diskusage/pull/107, where the
+  original author was asked for a one-line statement about using a fork as the
+  F-Droid source.
 
   MANAGE_EXTERNAL_STORAGE is the core purpose of the app (analysing all shared
   storage). PACKAGE_USAGE_STATS is optional and only improves per-app size
