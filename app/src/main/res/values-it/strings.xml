@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DiskUsage</string>
     <string name="app_description">Programma per l\'analisi del contenuto memoria disco e recuperare spazio disco.</string>
     <string name="scaning_directories">Analisi cartelle...</string>
     <string name="button_show">Visualizza</string>

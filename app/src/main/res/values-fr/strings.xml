@@ -20,7 +20,6 @@
  <!-- Translated by Ivan Volosyuk using translate.google.com with zero knowledge of french,
       Corrected and updated by Alexis Vuillemin -->
 <resources>
- <string name="app_name">DiskUsage</string>
  <string name="app_description">Utilitaire pour examiner le contenu de la carte SD et, optionnellement, y libérer de l\'espace.</string>
  <string name="scaning_directories">Examen des répertoires ...</string>
  <string name="button_show">Afficher</string>

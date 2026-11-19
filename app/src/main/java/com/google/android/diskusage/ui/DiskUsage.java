@@ -730,15 +730,13 @@ public class DiskUsage extends LoadableActivity {
       for (FileSystemEntry a : apps) {
         if (!(a instanceof FileSystemPackage)) continue;
         FileSystemPackage app = (FileSystemPackage) a;
-        String dir = sourcePath.replace(diskUsagePackage, app.pkg);
+        String dir = sourcePath.replace(BuildConfig.APPLICATION_ID, app.pkg);
         moveIntoPackage(app, media, dir, newName, type, blockSize);
       }
     } catch (Throwable t) {
       Timber.w(t, "Cannot map %s for the app list", newName);
     }
   }
-
-  private static final String diskUsagePackage = "com.google.android.diskusage";
 
   void moveAppData(@NonNull FileSystemEntry[] apps, FileSystemRoot media, long blockSize) {
     moveAppDirectory(apps, media, canonicalPath(getCacheDir()),

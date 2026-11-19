@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  -->
 <resources>
-    <string name="app_name">DiskUsage</string>
-<string name="app_description">Find the files and directories that use the most space and free up storage again.</string>
+    <string name="app_name" translatable="false">DiskUsage NG</string>
+<string name="app_description">DiskUsage NG finds the files and directories that use the most space and frees up storage again.</string>
 <string name="scaning_directories">Scanning directories...</string>
 <string name="button_show">Show</string>
 <string name="button_delete">Delete</string>

@@ -1,12 +1,17 @@
-# DiskUsage
+# DiskUsage NG
 
 Find out what is eating your storage — and delete it.
+
+> **Note:** this is the maintained continuation of DiskUsage. The app id is
+> `org.org.diskusageng` since 5.0.3; builds up to 5.0.2 used
+> `com.google.android.diskusage` and do not upgrade in place. Uninstall the old
+> app after installing the new one.
 
 [![CI](https://github.com/bartman081523/diskusage/actions/workflows/ci.yml/badge.svg)](https://github.com/bartman081523/diskusage/actions/workflows/ci.yml)
 [![Release](https://github.com/bartman081523/diskusage/actions/workflows/release.yml/badge.svg)](https://github.com/bartman081523/diskusage/actions/workflows/release.yml)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](COPYING.txt)
 
-DiskUsage is an Android storage analyser. Instead of a plain file list it draws a
+DiskUsage NG is an Android storage analyser. Instead of a plain file list it draws a
 map of your storage: every directory is a rectangle whose area is proportional to
 the space it occupies, and several levels of subdirectories are shown at once.
 Zoom into a region to see what is inside, then delete the big blocks to free up

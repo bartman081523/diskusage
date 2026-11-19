@@ -1,0 +1,6 @@
+* Neue App-ID (org.org.diskusageng), neuer Name und neues Icon - wie für einen
+  gepflegten Fork gefordert
+* Gleicher Funktionsumfang wie 5.0.2: Android-17-Unterstützung, funktionierender
+  nativer Scanner, Speicher- und App-Analyse, Ordner öffnen über Dateimanager
+* Diese Version installiert sich parallel zur alten com.google.android.diskusage;
+  die alte App nach der Migration deinstallieren

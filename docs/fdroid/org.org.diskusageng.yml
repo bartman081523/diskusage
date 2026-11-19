@@ -1,0 +1,67 @@
+Categories:
+  - System
+License: GPL-2.0-or-later
+AuthorName: Ivan Volosyuk
+WebSite: https://github.com/bartman081523/diskusage
+SourceCode: https://github.com/bartman081523/diskusage
+IssueTracker: https://github.com/bartman081523/diskusage/issues
+Changelog: https://github.com/bartman081523/diskusage/releases
+
+AutoName: DiskUsage NG
+Description: |-
+  Turns the storage into a readable map: every folder becomes a rectangle whose
+  area matches the space it occupies, with several levels of subfolders visible
+  at the same time. Zoom in to inspect a folder, tap to select, double tap to
+  open, and delete the blocks that waste the most space.
+
+  This is the maintained continuation of DiskUsage. The original app stopped at
+  an alpha release in 2023; this version was rebuilt for current Android, with a
+  working native scanner, reliable volume detection (internal storage, SD cards,
+  USB drives) and current permission handling.
+
+  Features:
+  * storage map with per-app breakdown into code, data and cache
+  * used/free space including the occupied percentage
+  * search across the scanned tree
+  * folder and file opening through any installed file manager or viewer
+  * delete confirmation that lists what will be removed
+  * dark mode, adaptive and themed icons, TV banner
+  * no ads, no tracking and no network access
+
+RepoType: git
+Repo: https://github.com/bartman081523/diskusage.git
+
+Builds:
+  - versionName: 5.0.3
+    versionCode: 50003
+    commit: v5.0.3
+    gradle:
+      - yes
+    output: app/build/outputs/apk/release/diskusage-release-5.0.3.apk
+    prebuild: sed -i '/^org.gradle.jvmargs/d' gradle.properties
+    ndk: r28c
+
+MaintainerNotes: |-
+  New app id (org.org.diskusageng) as required by the inclusion policy for
+  forks: fresh Android ID plus new name, icon, strings and store texts. The
+  original app (com.google.android.diskusage) is unmaintained - last release
+  5.0-alpha1 on 2023-12-07, no tags since, and its README itself points users at
+  a maintained fork. The work here was offered upstream as
+  https://github.com/IvanVolosyuk/diskusage/pull/107.
+
+  Version code = major * 10000 + minor * 100 + patch (5.0.3 -> 50003), tags are
+  v<versionName>; checkupdates reads version.properties through UpdateCheckData.
+  Build: AGP 9.5.1, Gradle 9.9.1, JDK 17, compileSdk/targetSdk 37, NDK r28c. If
+  the buildserver image does not ship platforms;android-37.0 and
+  build-tools;36.0.0 yet, they can be installed in prebuild with
+  $$SDK$$/cmdline-tools/latest/bin/sdkmanager.
+
+  MANAGE_EXTERNAL_STORAGE is the core purpose of the app (analysing all shared
+  storage). PACKAGE_USAGE_STATS is optional and only improves per-app size
+  details; the app works without it.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+UpdateCheckData: version.properties|versionCode=(\d+)|version.properties|versionName=(.+)
+CurrentVersion: 5.0.3
+CurrentVersionCode: 50003

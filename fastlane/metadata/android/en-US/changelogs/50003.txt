@@ -1,0 +1,6 @@
+* New app id (org.org.diskusageng) and new name/icon, as required for a
+  maintained fork
+* Same feature set as 5.0.2: Android 17 support, working native scanner,
+  disk/app analysis, folder opening through file managers
+* This build installs alongside the old com.google.android.diskusage app;
+  uninstall the old one after migrating

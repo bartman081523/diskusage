@@ -1,67 +1,69 @@
 # Publishing on F-Droid
 
-**Status:** DiskUsage already exists in F-Droid (`com.google.android.diskusage`,
-last version there was `5.0-alpha1`). So this is an *update* of the existing app
-entry, not a new package.
+**Status:** not submitted yet. F-Droid answered the earlier request for
+`com.google.android.diskusage` with:
 
-* Open merge request: <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58153>
-* Fork used for the MR: <https://gitlab.com/ch-zz/fdroiddata>
-* Branch: `diskusage-5.0.1`
-* Metadata file: [`com.google.android.diskusage.yml`](com.google.android.diskusage.yml)
-  (copy of `metadata/com.google.android.diskusage.yml` in the MR)
+> „We don't accept forks without original dev's approval."
+> „please change appid, icon, pics, text, and, after 3 months, submit it as a new
+> app, see Policy Quality point 6"
 
-## What the MR changes
+So the app was rebranded to **DiskUsage NG** with the new app id
+`org.org.diskusageng` (see the history below). A new-app submission is possible
+once the project has three months of active development (Inclusion Policy
+"Quality" #6), i.e. from **February 2027** — or earlier if the "proven users"
+exception can be demonstrated.
 
-| Field | Before | After |
-|---|---|---|
-| `Repo` / `SourceCode` / `IssueTracker` | `IvanVolosyuk/diskusage` | `bartman081523/diskusage` (maintained fork) |
-| `Builds` | up to `5.0-alpha1` (`5001`) | adds `5.0.1` (`50001`) |
-| `CurrentVersion` | `5.0-alpha1` | `5.0.1` |
-| `MaintainerNotes` | system.jar note | fork/modernisation, version-code scheme, SDK/NDK notes |
+## What is required (and already done)
 
-The old build entries are kept so that F-Droid's history stays intact.
+| Requirement (Inclusion Policy "Forks") | Status |
+|---|---|
+| fresh Android application ID | ✅ `org.org.diskusageng` |
+| different name | ✅ "DiskUsage NG" (non-translatable `app_name`) |
+| different icon | ✅ new navy/three-bar icon, adaptive + monochrome + TV banner |
+| different strings / store texts | ✅ fastlane metadata rewritten (en + de) |
+| store screenshots | ⏳ refresh before submitting |
+| 3 months of active development (Quality #6) | ⏳ from Feb 2027 |
+
+## Submission (when due)
+
+1. Copy [`org.org.diskusageng.yml`](org.org.diskusageng.yml) to
+   `metadata/org.org.diskusageng.yml` in an fdroiddata fork.
+2. Run `fdroid lint org.org.diskusageng`,
+   `fdroid rewritemeta org.org.diskusageng` and
+   `fdroid checkupdates org.org.diskusageng`.
+3. Push the branch and open a **"New app"** MR.
+4. Answer the expected questions:
+   * `MANAGE_EXTERNAL_STORAGE` — the app's core purpose is analysing all shared
+     storage.
+   * `QUERY_ALL_PACKAGES` — listing installed applications.
+   * `PACKAGE_USAGE_STATS` — optional, only better per-app sizes.
+   * Fork history — the original app is unmaintained since 2023, this is a fresh
+     app id with its own name/icon/texts, exactly as the policy asks.
+
+## History (closed MRs)
+
+| MR | Result |
+|---|---|
+| [!58150](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58150) | closed: CI checks failed (metadata not canonical, `checkupdates` lacked `UpdateCheckData`) |
+| [!58153](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58153) | closed: *"We don't accept forks without original dev's approval."* |
+| [!58163](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58163) | closed: *"please change appid, icon, pics, text, and, after 3 months, submit it as a new app"* — all pipeline checks were green |
 
 ## Local verification
 
 ```bash
 python3 -m venv fdroidvenv && fdroidvenv/bin/pip install fdroidserver
 git clone --depth 1 --filter=blob:none --sparse git@gitlab.com:fdroid/fdroiddata.git
-cd fdroiddata && git sparse-checkout set --no-cone '/metadata/com.google.android.diskusage.yml'
-fdroidvenv/bin/fdroid lint com.google.android.diskusage      # passes
+cd fdroiddata && git sparse-checkout set --no-cone '/metadata/org.org.diskusageng.yml'
+fdroidvenv/bin/fdroid lint org.org.diskusageng
 ```
 
 `fdroid lint` needs `config/categories.yml`, `config/antiFeatures.yml` and the
-`config/*.png` icons in the working tree (the sparse clone does not fetch them).
+`config/*.png` icons in the working tree; the sparse clone does not fetch them
+(`git show HEAD:config/... > config/...`).
 
-## Updating the MR for the next release
+## What the fork is
 
-1. Append a new `Builds` entry (commit `v<version>`, `output:` with the versioned
-   APK name) and bump `CurrentVersion`/`CurrentVersionCode`.
-2. Push to the fork; the MR updates automatically.
-
-```bash
-cd fdroiddata
-git fetch origin master && git rebase origin/master
-$EDITOR metadata/com.google.android.diskusage.yml
-git commit -m "DiskUsage: update to 5.0.2" && git push fork diskusage-5.0.1
-```
-
-## Version codes
-
-`versionCode = major * 10000 + minor * 100 + patch` (`5.1.2` → `50102`), derived
-from `version.properties`. `5.0.1` → `50001` is the first version after the
-`5.0-alpha1` (`5001`) that F-Droid built, so devices update normally.
-
-## Possible review questions
-
-* **`MANAGE_EXTERNAL_STORAGE`** — the app's purpose is analysing all shared
-  storage; without it only the app sandbox is readable.
-* **`QUERY_ALL_PACKAGES`** — needed to list installed applications and their
-  sizes.
-* **`PACKAGE_USAGE_STATS`** — optional, only improves per-app sizes.
-* **SDK 37 / NDK r28c** — if the buildserver image lacks
-  `platforms;android-37.0` or `build-tools;36.0.0`, they can be installed in
-  `prebuild` via `sdkmanager`.
-* **Fork instead of upstream** — upstream stopped at `5.0-alpha1`; the fork is
-  the actively maintained source and ships the same app id, so users keep
-  receiving updates.
+Same code base as before, rebranded: AGP 9.5.1/Gradle 9.9.1/JDK 17, SDK 37,
+NDK r28c, JNI scanner, `StorageManager` volume discovery, app sizes via
+`PackageManager`/`StorageStatsManager`, edge-to-edge UI, permissions screen and
+predictive-back handling.

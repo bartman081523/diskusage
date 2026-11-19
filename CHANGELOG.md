@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [5.0.3] - 2026-11-19
+
+### Changed
+
+* **New app id `org.org.diskusageng` and new name "DiskUsage NG"**, with a new
+  icon, store texts and screenshots. F-Droid requires a fresh application id,
+  name, icon and strings for a fork (Inclusion Policy "Forks"); the earlier
+  attempts to update the existing `com.google.android.diskusage` entry were
+  declined for that reason.
+* Builds up to 5.0.2 keep the old id; this release installs alongside them.
+  Uninstall the old app after migrating — settings are not transferred.
+
 ## [5.0.1] - 2026-11-18
 
 ### Fixed
@@ -87,6 +99,7 @@ Complete modernization of the Android build and the app itself.
 * NPE when the option menu updated without a selection.
 * Automatic selection when only one volume is available.
 
-[Unreleased]: https://github.com/bartman081523/diskusage/compare/v5.0.1...HEAD
+[Unreleased]: https://github.com/bartman081523/diskusage/compare/v5.0.3...HEAD
+[5.0.3]: https://github.com/bartman081523/diskusage/releases/tag/v5.0.3
 [5.0.1]: https://github.com/bartman081523/diskusage/releases/tag/v5.0.1
 [5.0.0]: https://github.com/bartman081523/diskusage/releases/tag/v5.0.0

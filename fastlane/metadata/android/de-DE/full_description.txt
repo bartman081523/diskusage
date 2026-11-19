@@ -1,25 +1,29 @@
-DiskUsage zeigt, welche Dateien und Verzeichnisse den Speicher deines Geräts
-belegen.
+DiskUsage NG macht aus deinem Speicher eine lesbare Karte.
 
-Statt einer einfachen Dateiliste zeichnet die App eine Karte des Speichers:
-Jedes Verzeichnis ist ein Rechteck, dessen Fläche proportional zum belegten
-Platz ist. Einige Ebenen von Unterverzeichnissen werden gleichzeitig
-dargestellt. Zoome in einen Bereich, um hineinzuschauen, und entferne die
-großen Blöcke, um Platz zu schaffen.
+Jeder Ordner wird zu einem Rechteck, dessen Fläche dem belegten Platz
+entspricht - mehrere Ebenen von Unterordnern gleichzeitig sichtbar. Zoome in
+einen Ordner, tippe einen Eintrag an, um ihn auszuwählen, doppeltippe zum
+Öffnen, und lösche die Blöcke, die am meisten Platz verschwenden.
+
+Warum NG?
+Das ist die gepflegte Fortführung von DiskUsage. Die Original-App endete 2023
+mit einer Alpha-Version; diese Fassung wurde für aktuelles Android neu gebaut -
+mit funktionierendem nativen Scanner, zuverlässiger Laufwerkserkennung und
+aktueller Berechtigungslogik.
 
 Funktionen
-* Übersichtskarte für internen Speicher, SD-Karten und USB-Geräte
-* Aufschlüsselung je App in Code-, Daten- und Cache-Größe
+* Speicherkarte für internen Speicher, SD-Karten und USB-Geräte
+* Aufschlüsselung je App in Code, Daten und Cache
 * Belegter und freier Speicher inklusive Prozentangabe
 * Suche über den gesamten gescannten Baum
-* Verzeichnisse mit Bestätigungsdialog löschen
-* Optionaler Root-Zugriff für beliebige eingebundene Dateisysteme
+* Ordner und Dateien über jeden installierten Dateimanager/Betrachter öffnen
+* Löschdialog, der vorher auflistet, was entfernt wird
+* Dunkelmodus, adaptive und thematische Symbole, TV-Banner
 * Keine Werbung, kein Tracking, kein Netzzugriff
 
-Ab Android 11 benötigt die App die Berechtigung "Alle Dateien verwalten",
-weil zum Analysieren jeder Ordner gelesen werden muss. Ohne sie sind nur die
-eigenen Dateien sichtbar. Der Zugriff auf Nutzungsdaten ist optional und wird
-nur für exakte App-Datengrößen verwendet.
+Ab Android 11 braucht die App "Alle Dateien" - zum Analysieren muss jeder Ordner
+gelesen werden. Der Nutzungsdaten-Zugriff ist optional und verbessert nur die
+App-Größenangaben.
 
-DiskUsage ist freie Software unter der GNU General Public License, Version 2
+DiskUsage NG ist freie Software unter der GNU General Public License, Version 2
 oder später.

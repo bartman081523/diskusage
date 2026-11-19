@@ -1,23 +1,29 @@
-DiskUsage shows which files and directories occupy the space on your device.
+DiskUsage NG turns your storage into a map you can actually read.
 
-Instead of a plain file list it draws a map of your storage: every directory is
-a rectangle whose area is proportional to the space it consumes, and a few
-levels of subdirectories are shown at the same time. Zoom into a region to see
-what is inside, and remove the big blocks to free up space.
+Every folder becomes a rectangle whose area matches the space it occupies, with
+several levels of subfolders visible at the same time. Zoom in to see what is
+inside a folder, tap an entry to select it, double tap to open it, and delete
+the blocks that waste the most space.
+
+Why NG?
+This is the maintained continuation of DiskUsage. The original app stopped at an
+alpha release in 2023; this version has been rebuilt for current Android, with a
+working native scanner, reliable volume detection and current permission
+handling.
 
 Features
-* Visual map of internal storage, SD cards and USB drives
-* Per-application breakdown of code, data and cache sizes
-* Shows used and free space including the percentage that is occupied
+* Storage map for internal storage, SD cards and USB drives
+* Per-app breakdown into code, data and cache
+* Used and free space including the occupied percentage
 * Search across the scanned tree
-* Delete whole directories with a confirmation screen
-* Optional root support to analyse any mounted file system
-* No ads, no tracking, no network access
+* Folder and file opening through any installed file manager or viewer
+* Delete confirmation that lists what will be removed
+* Dark mode, adaptive and themed icons, TV banner
+* No ads, no tracking and no network access
 
-The app needs the "All files access" permission on Android 11 and newer, because
-analysing the storage requires reading every directory. Without it only the
-app's own files are visible. Usage access is optional and only used to show
-exact per-app data sizes.
+The app needs "All files access" on Android 11+ because analysing the storage
+means reading every directory. "Usage access" is optional and only improves the
+per-app size details.
 
-DiskUsage is free software, licensed under the GNU General Public License
-version 2 or later.
+DiskUsage NG is free software under the GNU General Public License, version 2 or
+later.

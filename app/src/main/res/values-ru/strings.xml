@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  -->
 <resources>
-<string name="app_name">Карта SD</string>
 <string name="app_description">Утилита для просмотра занятости SD и ее очистки.</string>
 <string name="scaning_directories">Сканирование папок...</string>
 <string name="button_show">Показать</string>
