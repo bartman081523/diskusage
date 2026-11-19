@@ -137,6 +137,15 @@ Builds:
     prebuild: sed -i '/^org.gradle.jvmargs/d' gradle.properties
     ndk: r28c
 
+  - versionName: 5.0.2
+    versionCode: 50002
+    commit: v5.0.2
+    gradle:
+      - yes
+    output: app/build/outputs/apk/release/diskusage-release-5.0.2.apk
+    prebuild: sed -i '/^org.gradle.jvmargs/d' gradle.properties
+    ndk: r28c
+
 MaintainerNotes: |-
   This fork (bartman081523/diskusage) continues the app after the upstream
   repository stopped at 5.0-alpha1 (2023-12-07). It modernised the build (AGP 9.5.1,
@@ -164,5 +173,5 @@ MaintainerNotes: |-
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: version.properties|versionCode=(\d+)|version.properties|versionName=(.+)
-CurrentVersion: 5.0.1
-CurrentVersionCode: 50001
+CurrentVersion: 5.0.2
+CurrentVersionCode: 50002

@@ -41,6 +41,24 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Check whether anything shippable changed
+        id: changes
+        run: |
+          set -euo pipefail
+          last=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+          if [ -z "$last" ]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$last"..HEAD -- . \
+              ':(exclude)docs/**' ':(exclude)*.md' ':(exclude)version.properties' \
+              ':(exclude).github/**' ':(exclude)fastlane/**'; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to release since $last."
+          else
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Read version.properties
         id: version
         run: |
@@ -52,6 +70,9 @@ jobs:
           tag="v$version"
           if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "Tag $tag already exists - nothing to release."
+            should_release=false
+          elif [ "${{ steps.changes.outputs.changes }}" != "true" ]; then
+            echo "No shippable changes since the last tag - nothing to release."
             should_release=false
           else
             should_release=true
