@@ -100,7 +100,7 @@
     <string name="software_renderer">Software Renderer</string>
     <string name="hardware_renderer">Hardware Renderer</string>
     <string name="dialog_all_files_access_title">All files access needed</string>
-    <string name="dialog_all_files_access_desc">To analyse the whole storage DiskUsage needs the "All files access" permission.\n\nOpen Settings and allow access for DiskUsage, then return to this screen.</string>
+    <string name="dialog_all_files_access_desc">To analyse the whole storage DiskUsage NG needs the "All files access" permission.\n\nOpen Settings and allow access for DiskUsage, then return to this screen.</string>
     <string name="show_hide_mount_points">Show/hide mount points</string>
     <string name="root_required">Root required</string>
     <string name="usage_info">Used %1$s of %2$s (%3$d%%)</string>
@@ -109,7 +109,7 @@
     <string name="action_permissions">Permissions</string>
     <string name="permission_granted">granted</string>
     <string name="permission_denied">not granted</string>
-    <string name="permissions_dialog_message">All files access: %1$s\nUsage access: %2$s\n\nAll files access is required so that DiskUsage can read every folder. Without it only the app\'s own files are visible.\n\nUsage access is optional and only improves how precise the per-app sizes are.\n\nBoth are special app permissions, so the normal permission list in Android\'s app settings stays empty.</string>
+    <string name="permissions_dialog_message">All files access: %1$s\nUsage access: %2$s\n\nAll files access is required so that DiskUsage NG can read every folder. Without it only the app\'s own files are visible.\n\nUsage access is optional and only improves how precise the per-app sizes are.\n\nBoth are special app permissions, so the normal permission list in Android\'s app settings stays empty.</string>
     <string name="button_all_files_access">All files access</string>
     <string name="button_usage_access">Usage access</string>
     <string name="button_open_settings">Open settings</string>
