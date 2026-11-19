@@ -1,69 +1,67 @@
 # Publishing on F-Droid
 
-Everything the F-Droid build server needs is already in this repository:
+**Status:** DiskUsage already exists in F-Droid (`com.google.android.diskusage`,
+last version there was `5.0-alpha1`). So this is an *update* of the existing app
+entry, not a new package.
 
-* `fastlane/metadata/android/{en-US,de-DE}/…` — title, short and full
-  description, changelog, icon, feature graphic and phone screenshots.
-* An unsigned release build (`./gradlew assembleRelease` without
-  `keystore.properties`) — F-Droid signs the APK with its own key.
-* No prebuilt binaries apart from the Gradle wrapper and the source-built
-  `libscan.so` (built from `app/src/main/jni` with NDK r28c).
-* No anti-features: no ads, no tracking, no network permission.
+* Open merge request: <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58150>
+* Fork used for the MR: <https://gitlab.com/ch-zz/fdroiddata>
+* Branch: `diskusage-5.0.1`
+* Metadata file: [`com.google.android.diskusage.yml`](com.google.android.diskusage.yml)
+  (copy of `metadata/com.google.android.diskusage.yml` in the MR)
 
-## Submission
+## What the MR changes
 
-F-Droid does not pull repositories automatically. Inclusion is requested with a
-merge request against [fdroiddata](https://gitlab.com/fdroid/fdroiddata):
+| Field | Before | After |
+|---|---|---|
+| `Repo` / `SourceCode` / `IssueTracker` | `IvanVolosyuk/diskusage` | `bartman081523/diskusage` (maintained fork) |
+| `Builds` | up to `5.0-alpha1` (`5001`) | adds `5.0.1` (`50001`) |
+| `CurrentVersion` | `5.0-alpha1` | `5.0.1` |
+| `MaintainerNotes` | system.jar note | fork/modernisation, version-code scheme, SDK/NDK notes |
 
-1. Fork `https://gitlab.com/fdroid/fdroiddata`.
-2. Create `metadata/com.google.android.diskusage.yml` with the content of
-   [`com.google.android.diskusage.yml`](com.google.android.diskusage.yml)
-   (adjust `CurrentVersion`, `CurrentVersionCode` and `Builds` to the latest
-   release).
-3. Verify the metadata locally:
+The old build entries are kept so that F-Droid's history stays intact.
 
-   ```bash
-   fdroid lint com.google.android.diskusage
-   fdroid readmeta
-   fdroid rewritemeta com.google.android.diskusage
-   fdroid checkupdates com.google.android.diskusage
-   ```
+## Local verification
 
-4. Commit, push to your fork and open a merge request titled
-   `New app: DiskUsage (com.google.android.diskusage)`.
-5. Answer the reviewer questions. The most likely ones:
-   * **`MANAGE_EXTERNAL_STORAGE`** — needed because the app's whole purpose is
-     analysing all files; without it only the app's sandbox is readable.
-   * **`QUERY_ALL_PACKAGES`** — needed to list installed applications and their
-     sizes.
-   * **NDK build** — `app/src/main/jni/Android.mk` is built by AGP's
-     `ndkBuild` integration; no prebuilt `.so` is shipped.
-6. After the MR is merged the app appears in the F-Droid repository with the
-   next index update. Subsequent releases are picked up automatically through
-   the Git tags (`v*`) created by this repository's release workflow.
+```bash
+python3 -m venv fdroidvenv && fdroidvenv/bin/pip install fdroidserver
+git clone --depth 1 --filter=blob:none --sparse git@gitlab.com:fdroid/fdroiddata.git
+cd fdroiddata && git sparse-checkout set --no-cone '/metadata/com.google.android.diskusage.yml'
+fdroidvenv/bin/fdroid lint com.google.android.diskusage      # passes
+```
+
+`fdroid lint` needs `config/categories.yml`, `config/antiFeatures.yml` and the
+`config/*.png` icons in the working tree (the sparse clone does not fetch them).
+
+## Updating the MR for the next release
+
+1. Append a new `Builds` entry (commit `v<version>`, `output:` with the versioned
+   APK name) and bump `CurrentVersion`/`CurrentVersionCode`.
+2. Push to the fork; the MR updates automatically.
+
+```bash
+cd fdroiddata
+git fetch origin master && git rebase origin/master
+$EDITOR metadata/com.google.android.diskusage.yml
+git commit -m "DiskUsage: update to 5.0.2" && git push fork diskusage-5.0.1
+```
 
 ## Version codes
 
 `versionCode = major * 10000 + minor * 100 + patch` (`5.1.2` → `50102`), derived
-from `version.properties`. The first version published here (`5.0.0` → `50000`)
-is higher than the old `5.0-alpha1` (`5001`) so existing installations can
-upgrade.
+from `version.properties`. `5.0.1` → `50001` is the first version after the
+`5.0-alpha1` (`5001`) that F-Droid built, so devices update normally.
 
-If F-Droid's version auto-detection needs the mapping explicitly, add:
+## Possible review questions
 
-```yaml
-VercodeOperation:
-  - '10000 * %c1 + 100 * %c2 + %c3'
-```
-
-## Maintainer checklist for a new release
-
-```bash
-./scripts/bump-version.sh minor     # or patch/major
-git tag v$(sed -n 's/^versionName=//p' version.properties)
-git push origin --tags
-```
-
-The release workflow builds, signs (if secrets are configured) and publishes the
-APK. F-Droid then picks up the new tag, provided its metadata references the
-repository's tags.
+* **`MANAGE_EXTERNAL_STORAGE`** — the app's purpose is analysing all shared
+  storage; without it only the app sandbox is readable.
+* **`QUERY_ALL_PACKAGES`** — needed to list installed applications and their
+  sizes.
+* **`PACKAGE_USAGE_STATS`** — optional, only improves per-app sizes.
+* **SDK 37 / NDK r28c** — if the buildserver image lacks
+  `platforms;android-37.0` or `build-tools;36.0.0`, they can be installed in
+  `prebuild` via `sdkmanager`.
+* **Fork instead of upstream** — upstream stopped at `5.0-alpha1`; the fork is
+  the actively maintained source and ships the same app id, so users keep
+  receiving updates.
