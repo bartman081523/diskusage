@@ -4,7 +4,7 @@
 last version there was `5.0-alpha1`). So this is an *update* of the existing app
 entry, not a new package.
 
-* Open merge request: <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58150>
+* Open merge request: <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/58153>
 * Fork used for the MR: <https://gitlab.com/ch-zz/fdroiddata>
 * Branch: `diskusage-5.0.1`
 * Metadata file: [`com.google.android.diskusage.yml`](com.google.android.diskusage.yml)

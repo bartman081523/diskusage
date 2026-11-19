@@ -133,11 +133,9 @@ Builds:
     commit: v5.0.1
     gradle:
       - yes
-    ndk: r28c
     output: app/build/outputs/apk/release/diskusage-release-5.0.1.apk
-    prebuild:
-      # The development JVM args are too large for the buildserver.
-      - sed -i '/^org.gradle.jvmargs/d' gradle.properties
+    prebuild: sed -i '/^org.gradle.jvmargs/d' gradle.properties
+    ndk: r28c
 
 MaintainerNotes: |-
   This fork (bartman081523/diskusage) continues the app after the upstream
@@ -156,5 +154,6 @@ MaintainerNotes: |-
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
+UpdateCheckData: version.properties|versionCode=(\d+)|version.properties|versionName=(.+)
 CurrentVersion: 5.0.1
 CurrentVersionCode: 50001
