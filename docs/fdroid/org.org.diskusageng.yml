@@ -32,12 +32,12 @@ RepoType: git
 Repo: https://github.com/bartman081523/diskusage.git
 
 Builds:
-  - versionName: 5.0.3
-    versionCode: 50003
-    commit: v5.0.3
+  - versionName: 5.0.4
+    versionCode: 50004
+    commit: v5.0.4
     gradle:
       - yes
-    output: app/build/outputs/apk/release/diskusage-release-5.0.3.apk
+    output: app/build/outputs/apk/release/diskusage-release-5.0.4.apk
     prebuild: sed -i '/^org.gradle.jvmargs/d' gradle.properties
     ndk: r28c
 
@@ -49,7 +49,7 @@ MaintainerNotes: |-
   a maintained fork. The work here was offered upstream as
   https://github.com/IvanVolosyuk/diskusage/pull/107.
 
-  Version code = major * 10000 + minor * 100 + patch (5.0.3 -> 50003), tags are
+  Version code = major * 10000 + minor * 100 + patch (5.0.4 -> 50004), tags are
   v<versionName>; checkupdates reads version.properties through UpdateCheckData.
   Build: AGP 9.5.1, Gradle 9.9.1, JDK 17, compileSdk/targetSdk 37, NDK r28c. If
   the buildserver image does not ship platforms;android-37.0 and
@@ -63,5 +63,5 @@ MaintainerNotes: |-
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: version.properties|versionCode=(\d+)|version.properties|versionName=(.+)
-CurrentVersion: 5.0.3
-CurrentVersionCode: 50003
+CurrentVersion: 5.0.4
+CurrentVersionCode: 50004
